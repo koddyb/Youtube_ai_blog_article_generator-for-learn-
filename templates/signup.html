@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Sign up — BlogAI{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[70vh]">
+    <div class="w-full max-w-md">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-black gradient-text mb-2">Create account</h1>
+            <p class="text-gray-500">Start generating AI blog articles today</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="card p-8">
+            <form class="space-y-5" action="" method="POST">
+                {% csrf_token %}
+                {% if error_message %}
+                <div class="rounded-xl p-4 text-sm font-medium"
+                     style="background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#f87171;">
+                    ⚠ {{ error_message }}
+                </div>
+                {% endif %}
+
+                <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Username</label>
+                    <input type="text" id="username" name="username" class="input-dark" placeholder="your_username">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Email</label>
+                    <input type="email" id="email" name="email" class="input-dark" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Password</label>
+                    <input type="password" id="password" name="password" class="input-dark" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="input-dark" placeholder="••••••••">
+                </div>
+
+                <button type="submit" class="btn-primary w-full mt-2 py-3 text-base">Create Account →</button>
+            </form>
+
+            <p class="text-center text-gray-600 text-sm mt-6">
+                Already have an account?
+                <a href="/login" class="text-violet-400 hover:text-violet-300 font-semibold transition">Login</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

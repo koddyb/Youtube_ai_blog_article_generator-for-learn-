@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}My Blog Articles{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-black gradient-text">My Articles</h1>
+            <p class="text-gray-500 text-sm mt-1">All your AI-generated blog posts</p>
+        </div>
+        <a href="/"><button class="btn-primary text-sm">⚡ New Article</button></a>
+    </div>
+
+    <!-- Articles -->
+    <div class="space-y-4">
+        {% for article in blog_articles %}
+        <div class="card card-hover p-5">
+            <div class="flex items-start justify-between gap-4">
+                <a href="{% url 'blog-details' article.id %}" class="flex-1 min-w-0 group">
+                    <h3 class="font-bold text-gray-100 group-hover:text-violet-300 transition mb-2 truncate">
+                        {{ article.youtube_title }}
+                    </h3>
+                    <div class="text-gray-500 text-sm line-clamp-3 markdown-content prose-dark"
+                         data-content="{{ article.generated_content }}"></div>
+                    <p class="text-gray-600 text-xs mt-3">{{ article.created_at|date:"M d, Y" }}</p>
+                </a>
+                <form method="POST" action="{% url 'delete-blog' article.id %}" class="delete-form shrink-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-ghost-icon" title="Delete article">🗑</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card text-center py-16">
+            <p class="text-4xl mb-4">✍️</p>
+            <p class="text-gray-400 font-semibold text-lg mb-2">No articles yet</p>
+            <p class="text-gray-600 text-sm mb-6">Generate your first blog article from a YouTube video.</p>
+            <a href="/"><button class="btn-primary">⚡ Generate My First Article</button></a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.markdown-content').forEach(el => {
+        el.innerHTML = marked.parse(el.dataset.content);
+    });
+    document.querySelectorAll('.delete-form').forEach(form => {
+        form.addEventListener('submit', e => {
+            if (!confirm('Delete this article? This cannot be undone.')) e.preventDefault();
+        });
+    });
+</script>
+{% endblock %}

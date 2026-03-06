@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ blog_article_detail.youtube_title }}{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Back + Actions bar -->
+    <div class="flex items-center justify-between mb-6">
+        <a href="/blog-list"><button class="btn-outline text-sm py-2 px-4">← Back</button></a>
+        <div class="flex gap-2">
+            <button id="copyMarkdownBtn" class="btn-outline text-sm py-2 px-4">Copy Markdown</button>
+            <button id="copyFormattedBtn" class="btn-outline text-sm py-2 px-4"
+                    style="border-color:rgba(56,189,248,.3); color:#38bdf8;">Copy Formatted</button>
+            <form method="POST" action="{% url 'delete-blog' blog_article_detail.id %}" id="deleteForm">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger text-sm py-2 px-4">🗑 Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Article Card -->
+    <div class="card p-8">
+        <!-- Title -->
+        <h1 class="text-2xl font-black text-gray-100 mb-6 leading-tight">
+            {{ blog_article_detail.youtube_title }}
+        </h1>
+
+        <!-- Content -->
+        <div class="markdown-content prose-dark"
+             data-content="{{ blog_article_detail.generated_content }}"></div>
+
+        <!-- Metadata -->
+        <div class="mt-8 pt-6 border-t flex flex-col gap-3" style="border-color:rgba(255,255,255,.07)">
+            <div>
+                <span class="text-xs text-gray-500 uppercase tracking-widest font-semibold">Source</span>
+                <p class="text-gray-300 mt-1">{{ blog_article_detail.youtube_title }}</p>
+            </div>
+            <div>
+                <span class="text-xs text-gray-500 uppercase tracking-widest font-semibold">YouTube Link</span>
+                <div class="mt-1">
+                    <a href="{{ blog_article_detail.youtube_link }}" target="_blank"
+                       class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition"
+                       style="background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.25);">
+                        ▶ Watch on YouTube
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function setCopied(btn) {
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+    }
+
+    const contentEl = document.querySelector('.markdown-content');
+    contentEl.innerHTML = marked.parse(contentEl.dataset.content);
+
+    document.getElementById("deleteForm").addEventListener("submit", e => {
+        if (!confirm('Delete this article? This cannot be undone.')) e.preventDefault();
+    });
+    document.getElementById("copyMarkdownBtn").addEventListener("click", function () {
+        navigator.clipboard.writeText(contentEl.dataset.content).then(() => setCopied(this));
+    });
+    document.getElementById("copyFormattedBtn").addEventListener("click", function () {
+        navigator.clipboard.writeText(contentEl.innerHTML).then(() => setCopied(this));
+    });
+</script>
+{% endblock %}

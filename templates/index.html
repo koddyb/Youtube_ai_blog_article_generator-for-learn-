@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}BlogAI — Generate from YouTube{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="max-w-3xl mx-auto text-center mb-12">
+    <div class="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4"
+         style="background:rgba(124,58,237,.15); color:#a78bfa; border:1px solid rgba(124,58,237,.3)">
+        AI-Powered · YouTube → Blog
+    </div>
+    <h1 class="text-4xl sm:text-5xl font-black leading-tight mb-4">
+        Transform <span class="gradient-text">YouTube Videos</span><br>Into Viral Blog Posts
+    </h1>
+    <p class="text-gray-400 text-lg max-w-xl mx-auto">
+        Paste any YouTube URL and our AI will generate a fully structured, SEO-optimized blog article in seconds.
+    </p>
+</div>
+
+<!-- Generator Card -->
+<div class="max-w-3xl mx-auto card p-8">
+    <!-- Input -->
+    <div class="mb-6">
+        <label class="block text-gray-400 text-sm font-semibold mb-2 uppercase tracking-widest">YouTube Video URL</label>
+        <div class="flex gap-3">
+            <input type="url" id="youtubeLink" placeholder="https://youtube.com/watch?v=..."
+                   class="input-dark flex-1">
+            <button id="generateBlogButton" class="btn-primary whitespace-nowrap">
+                ⚡ Generate
+            </button>
+        </div>
+    </div>
+
+    <!-- Spinner -->
+    <div id="loadingCircle" class="spinner" style="display:none;"></div>
+
+    <!-- Result section -->
+    <section id="resultSection" style="display:none;">
+        <div class="flex items-center justify-between mb-4 pt-2 border-t" style="border-color:rgba(255,255,255,.07)">
+            <h2 class="text-lg font-bold gradient-text">Generated Article</h2>
+            <div class="flex gap-2">
+                <button id="copyMarkdownBtn" class="btn-outline text-xs py-1.5 px-3">Copy Markdown</button>
+                <button id="copyFormattedBtn" class="btn-outline text-xs py-1.5 px-3"
+                        style="border-color:rgba(56,189,248,.3); color:#38bdf8;">Copy Formatted</button>
+            </div>
+        </div>
+        <div id="blogContend" class="prose-dark"></div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let rawMarkdown = '';
+
+    function setCopied(btn) {
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+    }
+
+    document.getElementById("generateBlogButton").addEventListener("click", async () => {
+        const youtubeLink = document.getElementById("youtubeLink").value;
+        const loadingCircle = document.getElementById("loadingCircle");
+        const blogContend = document.getElementById("blogContend");
+        const resultSection = document.getElementById("resultSection");
+
+        if (!youtubeLink) { alert("Please enter a YouTube link."); return; }
+
+        loadingCircle.style.display = "block";
+        resultSection.style.display = "none";
+        blogContend.innerHTML = '';
+
+        try {
+            const response = await fetch("/generate-blog", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ link: youtubeLink })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.error === 'duplicate') {
+                    blogContend.innerHTML = `
+                        <div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:12px;padding:16px;">
+                            <p class="font-bold" style="color:#fbbf24;">⚠️ Article already exists</p>
+                            <p class="text-gray-400 mt-1 text-sm">You already generated an article for this video.
+                            <a href="/blog-details/${data.article_id}/"
+                               style="color:#38bdf8;" class="underline font-semibold">View the existing article →</a></p>
+                        </div>`;
+                } else {
+                    blogContend.innerHTML = `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;color:#f87171;">
+                        <strong>Error:</strong> ${data.error || 'Something went wrong.'}</div>`;
+                }
+                resultSection.style.display = "block";
+            } else {
+                rawMarkdown = data.content;
+                blogContend.innerHTML = marked.parse(rawMarkdown);
+                resultSection.style.display = "block";
+            }
+        } catch (e) {
+            console.error(e);
+            blogContend.innerHTML = `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;color:#f87171;">
+                Something went wrong, please try again later.</div>`;
+            resultSection.style.display = "block";
+        } finally {
+            loadingCircle.style.display = "none";
+        }
+    });
+
+    document.getElementById("copyMarkdownBtn").addEventListener("click", function () {
+        navigator.clipboard.writeText(rawMarkdown).then(() => setCopied(this));
+    });
+    document.getElementById("copyFormattedBtn").addEventListener("click", function () {
+        navigator.clipboard.writeText(document.getElementById("blogContend").innerHTML).then(() => setCopied(this));
+    });
+</script>
+{% endblock %}
