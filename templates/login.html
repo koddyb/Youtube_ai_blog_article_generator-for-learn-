@@ -11,13 +11,13 @@
         </div>
 
         <!-- Form Card -->
-        <div class="card p-8">
+        <div class="card card-padded">
             <form class="space-y-5" action="" method="POST">
                 {% csrf_token %}
                 {% if error_message %}
                 <div class="rounded-xl p-4 text-sm font-medium"
                      style="background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#f87171;">
-                    ⚠ {{ error_message }}
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> {{ error_message }}
                 </div>
                 {% endif %}
 
@@ -30,7 +30,9 @@
                     <input type="password" id="password" name="password" class="input-dark" placeholder="••••••••">
                 </div>
 
-                <button type="submit" class="btn-primary w-full mt-2 py-3 text-base">Login →</button>
+                <button type="submit" class="btn-primary w-full mt-2 py-3 text-base">
+                    Login <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
             </form>
 
             <p class="text-center text-gray-600 text-sm mt-6">

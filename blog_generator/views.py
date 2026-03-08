@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.contrib import messages
 from mistralai import Mistral
 from .models import BlogPost
 # Create your views here.
@@ -96,14 +97,14 @@ def get_transcription(link):
 
     api = YouTubeTranscriptApi()
     try:
-        # 1. Essai avec les langues préférées
+        #  Essai avec les langues favorites
         try:
             data = api.fetch(video_id, languages=['fr', 'en'])
             return " ".join([s.text for s in data])
         except Exception:
             pass
 
-        # 2. Fallback : on liste toutes les langues disponibles et on prend la première
+        # Fallback : on liste toutes les langues disponibles et on prend la premiere
         transcript_list = api.list(video_id)
         transcripts = list(transcript_list)
         if not transcripts:
@@ -138,7 +139,7 @@ def generate_blog_from_transcription(transcription):
     Transcription : {transcription}
     """
     chat_response = client.chat.complete(
-        model="mistral-small", # or mistral-large-latest
+        model="mistral-small", # ou (mistral-large-latest) pas oublier de regarder l'itilisation
         messages=[
             {"role": "user", "content": prompt},
         ]
@@ -165,6 +166,7 @@ def delete_blog(request, pk):
         article = BlogPost.objects.get(id=pk)
         if request.user == article.user:
             article.delete()
+            messages.success(request, 'Article supprimé avec succès.')
     return redirect('blog-list')
     
 
@@ -176,9 +178,10 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            messages.success(request, f'Bienvenue, {username} ! Vous êtes connecté.')
             return redirect('/')
         else:
-            return render(request, 'login.html', {'error_message': 'Invalid username or password.'}) 
+            return render(request, 'login.html', {'error_message': 'Identifiant ou mot de passe incorrect.'}) 
         
     return render(request, 'login.html')
 
@@ -190,12 +193,13 @@ def user_signup(request):
         confirm_password = request.POST.get('confirm_password')
         
         if password != confirm_password:
-            return render(request, 'signup.html', {'error_message': 'Passwords do not match.'})
+            return render(request, 'signup.html', {'error_message': 'Les mots de passe ne correspondent pas.'})
         
         try:
             user = User.objects.create_user(username=username, email=email, password=password)
             user.save()
             login(request, user)
+            messages.success(request, f'Compte créé avec succès ! Bienvenue, {username} !')
             return redirect('/')
         except Exception as e:
             return render(request, 'signup.html', {'error_message': str(e)})
@@ -204,5 +208,6 @@ def user_signup(request):
 
 def user_logout(request):
     logout(request)
+    messages.info(request, 'Vous avez été déconnecté.')
     return redirect('/')
 

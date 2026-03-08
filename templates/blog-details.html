@@ -8,23 +8,25 @@
 {% block content %}
 <div class="max-w-3xl mx-auto">
     <!-- Back + Actions bar -->
-    <div class="flex items-center justify-between mb-6">
-        <a href="/blog-list"><button class="btn-outline text-sm py-2 px-4">← Back</button></a>
-        <div class="flex gap-2">
+    <div class="details-action-bar">
+        <a href="/blog-list"><button class="btn-outline text-sm py-2 px-4"><i class="fa-solid fa-arrow-left mr-1"></i> Back</button></a>
+        <div class="details-action-bar-right">
             <button id="copyMarkdownBtn" class="btn-outline text-sm py-2 px-4">Copy Markdown</button>
             <button id="copyFormattedBtn" class="btn-outline text-sm py-2 px-4"
                     style="border-color:rgba(56,189,248,.3); color:#38bdf8;">Copy Formatted</button>
             <form method="POST" action="{% url 'delete-blog' blog_article_detail.id %}" id="deleteForm">
                 {% csrf_token %}
-                <button type="submit" class="btn-danger text-sm py-2 px-4">🗑 Delete</button>
+                <button type="submit" class="btn-danger text-sm py-2 px-4">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Delete
+                </button>
             </form>
         </div>
     </div>
 
     <!-- Article Card -->
-    <div class="card p-8">
+    <div class="card card-padded">
         <!-- Title -->
-        <h1 class="text-2xl font-black text-gray-100 mb-6 leading-tight">
+        <h1 class="text-xl sm:text-2xl font-black text-gray-100 mb-6 leading-tight">
             {{ blog_article_detail.youtube_title }}
         </h1>
 
@@ -44,7 +46,7 @@
                     <a href="{{ blog_article_detail.youtube_link }}" target="_blank"
                        class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition"
                        style="background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.25);">
-                        ▶ Watch on YouTube
+                        <i class="fa-brands fa-youtube mr-2"></i> Watch on YouTube
                     </a>
                 </div>
             </div>
@@ -55,24 +57,29 @@
 
 {% block scripts %}
 <script>
-    function setCopied(btn) {
-        const orig = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        btn.disabled = true;
-        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
-    }
-
     const contentEl = document.querySelector('.markdown-content');
     contentEl.innerHTML = marked.parse(contentEl.dataset.content);
 
     document.getElementById("deleteForm").addEventListener("submit", e => {
-        if (!confirm('Delete this article? This cannot be undone.')) e.preventDefault();
+        e.preventDefault();
+        showConfirm({
+            icon: '<i class="fa-solid fa-trash-can fa-lg"></i>',
+            title: 'Supprimer cet article ?',
+            message: 'Cette action est irréversible. L\'article sera définitivement supprimé.',
+            confirmText: '<i class="fa-solid fa-trash-can mr-1"></i> Supprimer',
+            onConfirm: () => document.getElementById("deleteForm").submit()
+        });
     });
+
     document.getElementById("copyMarkdownBtn").addEventListener("click", function () {
-        navigator.clipboard.writeText(contentEl.dataset.content).then(() => setCopied(this));
+        navigator.clipboard.writeText(contentEl.dataset.content).then(() => {
+            showToast('Markdown copié dans le presse-papiers.', 'success', 'Copié !');
+        });
     });
     document.getElementById("copyFormattedBtn").addEventListener("click", function () {
-        navigator.clipboard.writeText(contentEl.innerHTML).then(() => setCopied(this));
+        navigator.clipboard.writeText(contentEl.innerHTML).then(() => {
+            showToast('HTML formaté copié dans le presse-papiers.', 'success', 'Copié !');
+        });
     });
 </script>
 {% endblock %}

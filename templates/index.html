@@ -10,7 +10,7 @@
 <div class="max-w-3xl mx-auto text-center mb-12">
     <div class="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4"
          style="background:rgba(124,58,237,.15); color:#a78bfa; border:1px solid rgba(124,58,237,.3)">
-        AI-Powered · YouTube → Blog
+        AI-Powered &middot; YouTube <i class="fa-solid fa-arrow-right fa-xs mx-1"></i> Blog
     </div>
     <h1 class="text-4xl sm:text-5xl font-black leading-tight mb-4">
         Transform <span class="gradient-text">YouTube Videos</span><br>Into Viral Blog Posts
@@ -21,15 +21,15 @@
 </div>
 
 <!-- Generator Card -->
-<div class="max-w-3xl mx-auto card p-8">
+<div class="max-w-3xl mx-auto card card-padded">
     <!-- Input -->
     <div class="mb-6">
         <label class="block text-gray-400 text-sm font-semibold mb-2 uppercase tracking-widest">YouTube Video URL</label>
-        <div class="flex gap-3">
+        <div class="generator-input-row">
             <input type="url" id="youtubeLink" placeholder="https://youtube.com/watch?v=..."
                    class="input-dark flex-1">
-            <button id="generateBlogButton" class="btn-primary whitespace-nowrap">
-                ⚡ Generate
+            <button id="generateBlogButton" class="btn-primary">
+                <i class="fa-solid fa-bolt mr-1"></i> Generate
             </button>
         </div>
     </div>
@@ -39,9 +39,9 @@
 
     <!-- Result section -->
     <section id="resultSection" style="display:none;">
-        <div class="flex items-center justify-between mb-4 pt-2 border-t" style="border-color:rgba(255,255,255,.07)">
+        <div class="result-header">
             <h2 class="text-lg font-bold gradient-text">Generated Article</h2>
-            <div class="flex gap-2">
+            <div class="result-header-actions">
                 <button id="copyMarkdownBtn" class="btn-outline text-xs py-1.5 px-3">Copy Markdown</button>
                 <button id="copyFormattedBtn" class="btn-outline text-xs py-1.5 px-3"
                         style="border-color:rgba(56,189,248,.3); color:#38bdf8;">Copy Formatted</button>
@@ -56,24 +56,21 @@
 <script>
     let rawMarkdown = '';
 
-    function setCopied(btn) {
-        const orig = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        btn.disabled = true;
-        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
-    }
-
     document.getElementById("generateBlogButton").addEventListener("click", async () => {
-        const youtubeLink = document.getElementById("youtubeLink").value;
+        const youtubeLink = document.getElementById("youtubeLink").value.trim();
         const loadingCircle = document.getElementById("loadingCircle");
         const blogContend = document.getElementById("blogContend");
         const resultSection = document.getElementById("resultSection");
 
-        if (!youtubeLink) { alert("Please enter a YouTube link."); return; }
+        if (!youtubeLink) {
+            showToast('Veuillez entrer un lien YouTube valide.', 'warning');
+            return;
+        }
 
         loadingCircle.style.display = "block";
         resultSection.style.display = "none";
         blogContend.innerHTML = '';
+        showToast('Génération en cours…', 'info', 'Traitement', 8000);
 
         try {
             const response = await fetch("/generate-blog", {
@@ -85,38 +82,36 @@
 
             if (!response.ok) {
                 if (data.error === 'duplicate') {
-                    blogContend.innerHTML = `
-                        <div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:12px;padding:16px;">
-                            <p class="font-bold" style="color:#fbbf24;">⚠️ Article already exists</p>
-                            <p class="text-gray-400 mt-1 text-sm">You already generated an article for this video.
-                            <a href="/blog-details/${data.article_id}/"
-                               style="color:#38bdf8;" class="underline font-semibold">View the existing article →</a></p>
-                        </div>`;
+                    showToast(
+                        `Vous avez déjà un article pour cette vidéo. <a href="/blog-details/${data.article_id}/" style="color:#38bdf8;" class="underline font-semibold">Voir l'article <i class="fa-solid fa-arrow-right fa-xs ml-1"></i></a>`,
+                        'warning', 'Article existant', 7000
+                    );
                 } else {
-                    blogContend.innerHTML = `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;color:#f87171;">
-                        <strong>Error:</strong> ${data.error || 'Something went wrong.'}</div>`;
+                    showToast(data.error || 'Une erreur est survenue.', 'error', 'Génération échouée');
                 }
-                resultSection.style.display = "block";
             } else {
                 rawMarkdown = data.content;
                 blogContend.innerHTML = marked.parse(rawMarkdown);
                 resultSection.style.display = "block";
+                showToast('Article généré avec succès !', 'success', 'Génération terminée');
             }
         } catch (e) {
             console.error(e);
-            blogContend.innerHTML = `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;color:#f87171;">
-                Something went wrong, please try again later.</div>`;
-            resultSection.style.display = "block";
+            showToast('Erreur réseau. Veuillez réessayer.', 'error', 'Erreur réseau');
         } finally {
             loadingCircle.style.display = "none";
         }
     });
 
     document.getElementById("copyMarkdownBtn").addEventListener("click", function () {
-        navigator.clipboard.writeText(rawMarkdown).then(() => setCopied(this));
+        navigator.clipboard.writeText(rawMarkdown).then(() => {
+            showToast('Markdown copié dans le presse-papiers.', 'success', 'Copié !');
+        });
     });
     document.getElementById("copyFormattedBtn").addEventListener("click", function () {
-        navigator.clipboard.writeText(document.getElementById("blogContend").innerHTML).then(() => setCopied(this));
+        navigator.clipboard.writeText(document.getElementById("blogContend").innerHTML).then(() => {
+            showToast('HTML formaté copié dans le presse-papiers.', 'success', 'Copié !');
+        });
     });
 </script>
 {% endblock %}

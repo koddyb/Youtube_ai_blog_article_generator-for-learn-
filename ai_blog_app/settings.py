@@ -141,3 +141,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LOGIN_URL = 'login'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Session
+SESSION_COOKIE_AGE = 604800  # 7 jours
