@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['bp-genai-e781afd10fd5.herokuapp.com/', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['bp-genai-e781afd10fd5.herokuapp.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
