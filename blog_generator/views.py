@@ -121,6 +121,7 @@ def _get_transcription_ytdlp(video_id):
             '--no-warnings',
             '--no-check-formats',
             '--ignore-errors',
+            '--ignore-no-formats-error',
             '-o', os.path.join(tmpdir, '%(id)s'),
         ]
 
@@ -200,13 +201,14 @@ def _get_transcription_api(video_id):
 
     logger = logging.getLogger(__name__)
     cookies_path = _get_cookies_path()
-    api = YouTubeTranscriptApi()
+    # v1.x : les cookies se passent au constructeur, pas à fetch()/list()
+    api_kwargs = {}
+    if cookies_path:
+        api_kwargs['cookie_path'] = cookies_path
+    api = YouTubeTranscriptApi(**api_kwargs)
 
     try:
-        kwargs = {'languages': ['fr', 'en']}
-        if cookies_path:
-            kwargs['cookies'] = cookies_path
-        data = api.fetch(video_id, **kwargs)
+        data = api.fetch(video_id, languages=['fr', 'en'])
         return " ".join([s.text for s in data])
     except (TranscriptsDisabled, NoTranscriptFound) as e:
         logger.warning(f"[transcript-api] Pas de transcript pour {video_id}: {e}")
@@ -215,10 +217,7 @@ def _get_transcription_api(video_id):
 
     # Fallback : lister toutes les langues disponibles
     try:
-        list_kwargs = {}
-        if cookies_path:
-            list_kwargs['cookies'] = cookies_path
-        transcript_list = api.list(video_id, **list_kwargs)
+        transcript_list = api.list(video_id)
         transcripts = list(transcript_list)
         if not transcripts:
             logger.warning(f"[transcript-api] Aucune langue disponible pour {video_id}")
