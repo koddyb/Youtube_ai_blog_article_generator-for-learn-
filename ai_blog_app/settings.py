@@ -144,3 +144,32 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Session
 SESSION_COOKIE_AGE = 604800  # 7 jours
+
+# Logging — envoie les logs vers stderr (capturé par Heroku)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'blog_generator': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

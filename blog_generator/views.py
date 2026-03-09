@@ -138,6 +138,8 @@ def _get_transcription_ytdlp(video_id):
             # de format vidéo tout en ayant écrit les sous-titres avec succès
             if result.returncode != 0:
                 logger.info(f"yt-dlp returncode={result.returncode}, checking for subtitle files anyway")
+                if result.stderr:
+                    logger.info(f"yt-dlp stderr: {result.stderr[:500]}")
         except subprocess.TimeoutExpired:
             logger.warning("yt-dlp timeout")
             return None
@@ -150,6 +152,7 @@ def _get_transcription_ytdlp(video_id):
         if not sub_files:
             sub_files = glob_module.glob(os.path.join(tmpdir, '*.srt'))
         if not sub_files:
+            logger.warning(f"yt-dlp n'a produit aucun fichier de sous-titres pour {video_id}")
             return None
 
         # Préférer fr > en > premier disponible
@@ -193,7 +196,9 @@ def _parse_vtt(filepath):
 def _get_transcription_api(video_id):
     """Récupère la transcription via youtube-transcript-api."""
     from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
+    import logging
 
+    logger = logging.getLogger(__name__)
     cookies_path = _get_cookies_path()
     api = YouTubeTranscriptApi()
 
@@ -203,8 +208,10 @@ def _get_transcription_api(video_id):
             kwargs['cookies'] = cookies_path
         data = api.fetch(video_id, **kwargs)
         return " ".join([s.text for s in data])
-    except Exception:
-        pass
+    except (TranscriptsDisabled, NoTranscriptFound) as e:
+        logger.warning(f"[transcript-api] Pas de transcript pour {video_id}: {e}")
+    except Exception as e:
+        logger.error(f"[transcript-api] Erreur fetch pour {video_id}: {type(e).__name__}: {e}")
 
     # Fallback : lister toutes les langues disponibles
     try:
@@ -214,12 +221,15 @@ def _get_transcription_api(video_id):
         transcript_list = api.list(video_id, **list_kwargs)
         transcripts = list(transcript_list)
         if not transcripts:
+            logger.warning(f"[transcript-api] Aucune langue disponible pour {video_id}")
             return None
         data = transcripts[0].fetch()
         return " ".join([s.text for s in data])
-    except (TranscriptsDisabled, NoTranscriptFound):
+    except (TranscriptsDisabled, NoTranscriptFound) as e:
+        logger.warning(f"[transcript-api] Transcripts désactivés pour {video_id}: {e}")
         return None
-    except Exception:
+    except Exception as e:
+        logger.error(f"[transcript-api] Erreur list/fallback pour {video_id}: {type(e).__name__}: {e}")
         return None
 
 
